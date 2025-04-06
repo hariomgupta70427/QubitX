@@ -1,5 +1,6 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const video = document.getElementById('video');
+    const outputCanvas = document.getElementById('output-canvas');
     const captureBtn = document.getElementById('capture-btn');
     const newPhotoBtn = document.getElementById('new-photo-btn');
     const downloadBtn = document.getElementById('download-btn');
@@ -8,8 +9,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const capturedPhoto = document.getElementById('captured-photo');
 
     let stream = null;
+    let selfieSegmentation = null;
     let backgroundImage = new Image();
     backgroundImage.src = 'background.jpg';
+
+    // Initialize MediaPipe Selfie Segmentation
+    async function initializeSegmentation() {
+        selfieSegmentation = new SelfieSegmentation({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`;
+        }});
+
+        selfieSegmentation.setOptions({
+            modelSelection: 1,
+            selfieMode: true
+        });
+
+        selfieSegmentation.onResults(onSegmentationResults);
+
+        await selfieSegmentation.initialize();
+    }
+
+    // Handle segmentation results
+    function onSegmentationResults(results) {
+        const ctx = outputCanvas.getContext('2d');
+        outputCanvas.width = video.videoWidth;
+        outputCanvas.height = video.videoHeight;
+
+        // Draw the segmentation mask
+        ctx.drawImage(results.segmentationMask, 0, 0, outputCanvas.width, outputCanvas.height);
+
+        // Only keep the person (white parts of the mask)
+        ctx.globalCompositeOperation = 'source-in';
+        ctx.drawImage(video, 0, 0, outputCanvas.width, outputCanvas.height);
+
+        // Reset composite operation
+        ctx.globalCompositeOperation = 'source-over';
+    }
 
     // Start camera
     async function startCamera() {
@@ -25,10 +60,21 @@ document.addEventListener('DOMContentLoaded', () => {
             video.onloadedmetadata = () => {
                 video.play();
                 captureBtn.disabled = false;
+                // Start processing each frame
+                processFrames();
             };
         } catch (err) {
             console.error("Error accessing camera:", err);
             alert("Could not access camera. Please ensure you have granted camera permissions.");
+        }
+    }
+
+    // Process video frames
+    async function processFrames() {
+        if (!selfieSegmentation || !video.videoWidth) return;
+        await selfieSegmentation.send({image: video});
+        if (video.srcObject) {
+            requestAnimationFrame(processFrames);
         }
     }
 
@@ -45,53 +91,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // Capture and composite photo
     function capturePhoto() {
         const canvas = document.createElement('canvas');
-        
-        // Set canvas size to match background image dimensions
         canvas.width = backgroundImage.naturalWidth;
         canvas.height = backgroundImage.naturalHeight;
-        const context = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d');
 
-        // First draw background
-        context.drawImage(backgroundImage, 0, 0);
+        // Draw background
+        ctx.drawImage(backgroundImage, 0, 0);
 
-        // Create temporary canvas for captured photo
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = video.videoWidth;
-        tempCanvas.height = video.videoHeight;
-        const tempContext = tempCanvas.getContext('2d');
-
-        // Capture and flip webcam image
-        tempContext.translate(tempCanvas.width, 0);
-        tempContext.scale(-1, 1);
-        tempContext.drawImage(video, 0, 0);
-
-        // Calculate dimensions to fit photo in center third of background
-        const targetWidth = canvas.width * 0.33; // One third of background width
-        const scale = targetWidth / tempCanvas.width;
-        const targetHeight = tempCanvas.height * scale;
+        // Calculate dimensions to fit segmented person in center third of background
+        const targetWidth = canvas.width * 0.33;
+        const scale = targetWidth / outputCanvas.width;
+        const targetHeight = outputCanvas.height * scale;
         const x = (canvas.width - targetWidth) / 2;
         const y = (canvas.height - targetHeight) / 2;
 
-        // Draw the captured photo onto main canvas
-        context.drawImage(tempCanvas, x, y, targetWidth, targetHeight);
-        
-        // Add a subtle vignette effect
-        const gradient = context.createRadialGradient(
+        // Draw the segmented person
+        ctx.drawImage(outputCanvas, x, y, targetWidth, targetHeight);
+
+        // Add vignette effect
+        const gradient = ctx.createRadialGradient(
             canvas.width/2, canvas.height/2, 0,
             canvas.width/2, canvas.height/2, canvas.width/2
         );
         gradient.addColorStop(0, 'rgba(0,0,0,0)');
         gradient.addColorStop(1, 'rgba(0,0,0,0.3)');
-        context.fillStyle = gradient;
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Convert to data URL and set as photo
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Set result and show
         capturedPhoto.src = canvas.toDataURL('image/png', 1.0);
-        
-        // Show result section
         resultSection.classList.remove('hidden');
-        
-        // Stop camera
         stopCamera();
     }
 
@@ -105,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Download photo
     function downloadPhoto() {
         const link = document.createElement('a');
-        link.download = `photo-composition-${new Date().toISOString().slice(0,19).replace(/[:]/g, '-')}.png`;
+        link.download = `quantum-photo-${new Date().toISOString().slice(0,19).replace(/[:]/g, '-')}.png`;
         link.href = capturedPhoto.src;
         link.click();
     }
@@ -124,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Start camera when page loads
+    // Initialize
+    await initializeSegmentation();
     startCamera();
 }); 
