@@ -1,49 +1,24 @@
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     const video = document.getElementById('video');
-    const outputCanvas = document.getElementById('output-canvas');
     const captureBtn = document.getElementById('capture-btn');
     const newPhotoBtn = document.getElementById('new-photo-btn');
     const downloadBtn = document.getElementById('download-btn');
+    const printBtn = document.getElementById('print-btn');
     const resultSection = document.getElementById('result-section');
-    const cameraContainer = document.getElementById('camera-container');
     const capturedPhoto = document.getElementById('captured-photo');
+    const backgroundImg = document.getElementById('background-preview');
 
     let stream = null;
-    let selfieSegmentation = null;
-    let backgroundImage = new Image();
-    backgroundImage.src = 'background.jpg';
 
-    // Initialize MediaPipe Selfie Segmentation
-    async function initializeSegmentation() {
-        selfieSegmentation = new SelfieSegmentation({locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`;
-        }});
-
-        selfieSegmentation.setOptions({
-            modelSelection: 1,
-            selfieMode: true
-        });
-
-        selfieSegmentation.onResults(onSegmentationResults);
-
-        await selfieSegmentation.initialize();
-    }
-
-    // Handle segmentation results
-    function onSegmentationResults(results) {
-        const ctx = outputCanvas.getContext('2d');
-        outputCanvas.width = video.videoWidth;
-        outputCanvas.height = video.videoHeight;
-
-        // Draw the segmentation mask
-        ctx.drawImage(results.segmentationMask, 0, 0, outputCanvas.width, outputCanvas.height);
-
-        // Only keep the person (white parts of the mask)
-        ctx.globalCompositeOperation = 'source-in';
-        ctx.drawImage(video, 0, 0, outputCanvas.width, outputCanvas.height);
-
-        // Reset composite operation
-        ctx.globalCompositeOperation = 'source-over';
+    // Make sure background is loaded
+    if (!backgroundImg.complete) {
+        backgroundImg.onload = () => {
+            console.log('Background image loaded successfully');
+        };
+        backgroundImg.onerror = () => {
+            console.error('Error loading background image');
+            alert('Could not load background.jpg. Please make sure it exists in the same directory.');
+        };
     }
 
     // Start camera
@@ -57,68 +32,65 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } 
             });
             video.srcObject = stream;
-            video.onloadedmetadata = () => {
-                video.play();
-                captureBtn.disabled = false;
-                // Start processing each frame
-                processFrames();
-            };
+            video.play();
+            captureBtn.disabled = false;
         } catch (err) {
             console.error("Error accessing camera:", err);
             alert("Could not access camera. Please ensure you have granted camera permissions.");
         }
     }
 
-    // Process video frames
-    async function processFrames() {
-        if (!selfieSegmentation || !video.videoWidth) return;
-        await selfieSegmentation.send({image: video});
-        if (video.srcObject) {
-            requestAnimationFrame(processFrames);
-        }
-    }
-
     // Stop camera
     function stopCamera() {
         if (stream) {
-            const tracks = stream.getTracks();
-            tracks.forEach(track => track.stop());
+            stream.getTracks().forEach(track => track.stop());
             video.srcObject = null;
             stream = null;
         }
     }
 
-    // Capture and composite photo
+    // Capture photo
     function capturePhoto() {
+        // Create a fixed size canvas (16:9 aspect ratio, common resolution)
         const canvas = document.createElement('canvas');
-        canvas.width = backgroundImage.naturalWidth;
-        canvas.height = backgroundImage.naturalHeight;
+        canvas.width = 1920;  // Fixed width
+        canvas.height = 1080; // Fixed height
         const ctx = canvas.getContext('2d');
 
-        // Draw background
-        ctx.drawImage(backgroundImage, 0, 0);
+        // Fill with background first
+        const bgScale = Math.max(canvas.width / backgroundImg.width, canvas.height / backgroundImg.height);
+        const bgX = (canvas.width - backgroundImg.width * bgScale) / 2;
+        const bgY = (canvas.height - backgroundImg.height * bgScale) / 2;
+        ctx.drawImage(backgroundImg, bgX, bgY, backgroundImg.width * bgScale, backgroundImg.height * bgScale);
 
-        // Calculate dimensions to fit segmented person in center third of background
-        const targetWidth = canvas.width * 0.33;
-        const scale = targetWidth / outputCanvas.width;
-        const targetHeight = outputCanvas.height * scale;
-        const x = (canvas.width - targetWidth) / 2;
-        const y = (canvas.height - targetHeight) / 2;
+        // Calculate scaling for video to fit in canvas (make it smaller - 60% of the height)
+        const targetHeight = canvas.height * 0.6; // Person takes up 60% of the height
+        const scale = targetHeight / video.videoHeight;
+        const scaledWidth = video.videoWidth * scale;
+        const x = (canvas.width - scaledWidth) / 2; // Center horizontally
+        const y = canvas.height - (targetHeight + 20); // Place near bottom with 20px margin
 
-        // Draw the segmented person
-        ctx.drawImage(outputCanvas, x, y, targetWidth, targetHeight);
-
-        // Add vignette effect
-        const gradient = ctx.createRadialGradient(
-            canvas.width/2, canvas.height/2, 0,
-            canvas.width/2, canvas.height/2, canvas.width/2
+        // Draw video feed (mirrored)
+        ctx.save();
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(
+            video,
+            canvas.width - (x + scaledWidth), // Adjust x for mirroring
+            y,
+            scaledWidth,
+            targetHeight
         );
-        gradient.addColorStop(0, 'rgba(0,0,0,0)');
-        gradient.addColorStop(1, 'rgba(0,0,0,0.3)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
 
-        // Set result and show
+        // Add event hashtag
+        ctx.font = 'bold 48px Inter, sans-serif';
+        ctx.fillStyle = '#FF3366';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('#YourEventHashtag', canvas.width - 40, canvas.height - 40);
+
+        // Set as captured photo
         capturedPhoto.src = canvas.toDataURL('image/png', 1.0);
         resultSection.classList.remove('hidden');
         stopCamera();
@@ -127,33 +99,72 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Take new photo
     function takeNewPhoto() {
         resultSection.classList.add('hidden');
-        cameraContainer.classList.remove('hidden');
         startCamera();
     }
 
     // Download photo
     function downloadPhoto() {
         const link = document.createElement('a');
-        link.download = `quantum-photo-${new Date().toISOString().slice(0,19).replace(/[:]/g, '-')}.png`;
+        link.download = `event-photo-${new Date().toISOString().slice(0,19).replace(/[:]/g, '-')}.png`;
         link.href = capturedPhoto.src;
         link.click();
+    }
+
+    // Print photo
+    function printPhoto() {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Print Event Photo</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 100vh;
+                            background: #000;
+                        }
+                        img {
+                            max-width: 100%;
+                            max-height: 100vh;
+                            object-fit: contain;
+                        }
+                        @media print {
+                            body {
+                                background: none;
+                            }
+                            img {
+                                max-width: 100%;
+                                height: auto;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <img src="${capturedPhoto.src}" onload="window.print();window.close()">
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
     }
 
     // Event listeners
     captureBtn.addEventListener('click', capturePhoto);
     newPhotoBtn.addEventListener('click', takeNewPhoto);
     downloadBtn.addEventListener('click', downloadPhoto);
+    printBtn.addEventListener('click', printPhoto);
 
     // Keyboard shortcuts
     document.addEventListener('keyup', (e) => {
-        if (e.code === 'Space' && !captureBtn.disabled && !resultSection.classList.contains('hidden')) {
+        if (e.code === 'Space' && !captureBtn.disabled) {
             capturePhoto();
         } else if (e.code === 'KeyR' && resultSection.classList.contains('hidden')) {
             takeNewPhoto();
         }
     });
 
-    // Initialize
-    await initializeSegmentation();
+    // Start camera when page loads
     startCamera();
 }); 

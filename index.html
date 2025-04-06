@@ -3,55 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Ideathon & Workshop</title>
+    <title>Event Photo Booth</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation"></script>
 </head>
 <body>
-    <header class="header">
-        <h1>Quantum Ideathon & Workshop</h1>
-        <p class="subtitle">Join us for an exciting journey into the world of quantum computing!</p>
-    </header>
+    <div class="container">
+        <header>
+            <h1>Event Photo Booth</h1>
+            <p class="subtitle">Capture your moment at our event! Take a photo with our custom background and download it instantly.</p>
+        </header>
 
-    <div class="camera-container">
-        <video id="video" autoplay playsinline></video>
-        <canvas id="output-canvas" class="output-canvas"></canvas>
-        <div class="controls">
-            <button id="capture-btn" class="btn" disabled>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"></path>
-                </svg>
-                Capture Photo
-            </button>
+        <div class="camera-section">
+            <div class="camera-container">
+                <video id="video" autoplay playsinline></video>
+                <div class="camera-overlay">
+                    <div class="frame-corners"></div>
+                </div>
+                <img id="background-preview" src="background.jpg" alt="Event Background" style="display: none;">
+            </div>
+            <div class="camera-controls">
+                <p class="camera-instructions">Position yourself in the frame and smile!</p>
+                <button id="capture-btn" class="btn" disabled>
+                    <span class="camera-icon">📸</span>
+                    Take Photo
+                </button>
+            </div>
+        </div>
+
+        <div id="result-section" class="hidden">
+            <div class="captured-photo-container">
+                <img id="captured-photo" src="" alt="Your Event Photo">
+                <div class="photo-overlay">
+                    <p class="event-tag">#YourEventHashtag</p>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button id="new-photo-btn" class="btn">
+                    <span class="retry-icon">🔄</span>
+                    Retake Photo
+                </button>
+                <button id="download-btn" class="btn">
+                    <span class="download-icon">⬇️</span>
+                    Download Photo
+                </button>
+                <button id="print-btn" class="btn">
+                    <span class="print-icon">🖨️</span>
+                    Print Photo
+                </button>
+            </div>
         </div>
     </div>
-
-    <div id="result-section" class="hidden">
-        <div class="captured-photo-container">
-            <img id="captured-photo" src="" alt="Composed Photo">
-        </div>
-        <div class="action-buttons">
-            <button id="new-photo-btn" class="btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M23 4v6h-6"></path>
-                    <path d="M1 20v-6h6"></path>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                </svg>
-                Take New Photo
-            </button>
-            <button id="download-btn" class="btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Download Photo
-            </button>
-        </div>
-    </div>
-
     <script src="script.js"></script>
 </body>
 </html> 
