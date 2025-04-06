@@ -6,20 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const printBtn = document.getElementById('print-btn');
     const resultSection = document.getElementById('result-section');
     const capturedPhoto = document.getElementById('captured-photo');
-    const backgroundImg = document.getElementById('background-preview');
 
     let stream = null;
-
-    // Make sure background is loaded
-    if (!backgroundImg.complete) {
-        backgroundImg.onload = () => {
-            console.log('Background image loaded successfully');
-        };
-        backgroundImg.onerror = () => {
-            console.error('Error loading background image');
-            alert('Could not load background.jpg. Please make sure it exists in the same directory.');
-        };
-    }
 
     // Start camera
     async function startCamera() {
@@ -51,24 +39,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Capture photo
     function capturePhoto() {
-        // Create a fixed size canvas (16:9 aspect ratio, common resolution)
         const canvas = document.createElement('canvas');
-        canvas.width = 1920;  // Fixed width
-        canvas.height = 1080; // Fixed height
+        canvas.width = 1920;
+        canvas.height = 1080;
         const ctx = canvas.getContext('2d');
 
-        // Fill with background first
-        const bgScale = Math.max(canvas.width / backgroundImg.width, canvas.height / backgroundImg.height);
-        const bgX = (canvas.width - backgroundImg.width * bgScale) / 2;
-        const bgY = (canvas.height - backgroundImg.height * bgScale) / 2;
-        ctx.drawImage(backgroundImg, bgX, bgY, backgroundImg.width * bgScale, backgroundImg.height * bgScale);
+        // Fill with a gradient background
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, '#1a1a1a');
+        gradient.addColorStop(1, '#4a4a4a');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Calculate scaling for video to fit in canvas (make it smaller - 60% of the height)
-        const targetHeight = canvas.height * 0.6; // Person takes up 60% of the height
-        const scale = targetHeight / video.videoHeight;
+        // Calculate video dimensions to maintain aspect ratio
+        const scale = Math.min(
+            canvas.width / video.videoWidth,
+            canvas.height / video.videoHeight
+        ) * 0.9; // Scale down to 90% to leave some margin
+
         const scaledWidth = video.videoWidth * scale;
-        const x = (canvas.width - scaledWidth) / 2; // Center horizontally
-        const y = canvas.height - (targetHeight + 20); // Place near bottom with 20px margin
+        const scaledHeight = video.videoHeight * scale;
+        const x = (canvas.width - scaledWidth) / 2;
+        const y = (canvas.height - scaledHeight) / 2;
 
         // Draw video feed (mirrored)
         ctx.save();
@@ -76,19 +68,19 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.scale(-1, 1);
         ctx.drawImage(
             video,
-            canvas.width - (x + scaledWidth), // Adjust x for mirroring
+            canvas.width - (x + scaledWidth),
             y,
             scaledWidth,
-            targetHeight
+            scaledHeight
         );
         ctx.restore();
 
-        // Add event hashtag
-        ctx.font = 'bold 48px Inter, sans-serif';
-        ctx.fillStyle = '#FF3366';
+        // Add QubitX hashtag
+        ctx.font = 'bold 48px "Space Grotesk", sans-serif';
+        ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'bottom';
-        ctx.fillText('#YourEventHashtag', canvas.width - 40, canvas.height - 40);
+        ctx.fillText('#QubitX', canvas.width - 40, canvas.height - 40);
 
         // Set as captured photo
         capturedPhoto.src = canvas.toDataURL('image/png', 1.0);
@@ -105,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Download photo
     function downloadPhoto() {
         const link = document.createElement('a');
-        link.download = `event-photo-${new Date().toISOString().slice(0,19).replace(/[:]/g, '-')}.png`;
+        link.download = `qubitx-photo-${new Date().toISOString().slice(0,19).replace(/[:]/g, '-')}.png`;
         link.href = capturedPhoto.src;
         link.click();
     }
@@ -116,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Print Event Photo</title>
+                    <title>Print QubitX Photo</title>
                     <style>
                         body {
                             margin: 0;
