@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QubitX - Quantum Ideathon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-white text-black min-h-screen">
+    <!-- Vertical Navigation -->
+    <nav class="fixed left-0 top-0 h-full w-24 flex flex-col justify-between py-8 px-4 border-r border-gray-100">
+        <div class="text-sm tracking-wider rotate-180 [writing-mode:vertical-lr]">
+            reach
+        </div>
+        <div class="text-xs text-gray-400">01</div>
+    </nav>
+
+    <!-- Vertical Label -->
+    <div class="fixed right-0 top-1/2 -translate-y-1/2 transform">
+        <div class="text-sm tracking-wider rotate-180 [writing-mode:vertical-lr] text-gray-300 mr-8">
+            the magic process
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="ml-24 p-12 relative">
+        <!-- First Section -->
+        <section class="min-h-screen flex items-center relative">
+            <div class="max-w-4xl">
+                <h1 class="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight mb-8">
+                    the holy grail of quantum computing
+                </h1>
+                <p class="text-xl text-gray-600 max-w-xl">
+                    Let your ideas grow. Make your quantum dreams reality. Here's how.
+                </p>
+            </div>
+            <!-- Abstract Shape -->
+            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-1/3 aspect-square bg-gray-50 rounded-full blur-3xl"></div>
+        </section>
+
+        <!-- Second Section -->
+        <section class="min-h-screen flex flex-col justify-center items-center text-center relative">
+            <h2 class="text-4xl md:text-5xl font-bold mb-8">
+                reach out,<br>let's make this happen.
+            </h2>
+            <div class="text-gray-600 space-y-2 mb-12">
+                <p>hello@quantumquorum.com</p>
+                <p>+91 123 456 7890</p>
+            </div>
+            <div class="w-32 h-16 border-b-2 border-black"></div>
+        </section>
+
+        <!-- Timeline Cards -->
+        <section class="py-24">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- Card 1 -->
+                <div class="p-8 bg-gray-50 rounded-2xl transition-all hover:bg-gray-100">
+                    <div class="text-sm text-gray-400 mb-4">01</div>
+                    <h3 class="text-2xl font-bold mb-4">Registration</h3>
+                    <p class="text-gray-600">Submit your registration on Unstop by 7th April</p>
+                </div>
+                <!-- Card 2 -->
+                <div class="p-8 bg-gray-50 rounded-2xl transition-all hover:bg-gray-100">
+                    <div class="text-sm text-gray-400 mb-4">02</div>
+                    <h3 class="text-2xl font-bold mb-4">PPT Submission</h3>
+                    <p class="text-gray-600">Submit your presentation slides by 7th April</p>
+                </div>
+                <!-- Card 3 -->
+                <div class="p-8 bg-gray-50 rounded-2xl transition-all hover:bg-gray-100">
+                    <div class="text-sm text-gray-400 mb-4">03</div>
+                    <h3 class="text-2xl font-bold mb-4">Pitching Round</h3>
+                    <p class="text-gray-600">Present your ideas to the judges on 11th April</p>
+                </div>
+                <!-- Card 4 -->
+                <div class="p-8 bg-gray-50 rounded-2xl transition-all hover:bg-gray-100">
+                    <div class="text-sm text-gray-400 mb-4">04</div>
+                    <h3 class="text-2xl font-bold mb-4">Prize Pool</h3>
+                    <p class="text-gray-600">Win from a prize pool of ₹10,000</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Menu Button -->
+    <button class="fixed top-8 right-8 z-50 p-4 bg-white rounded-full shadow-lg hover:shadow-xl transition-all" id="menuToggle">
+        <div class="w-6 h-0.5 bg-black mb-1.5"></div>
+        <div class="w-6 h-0.5 bg-black"></div>
+    </button>
+
+    <!-- Full Screen Menu -->
+    <div class="fixed inset-0 bg-white z-40 transform translate-x-full transition-transform duration-500" id="fullMenu">
+        <div class="container mx-auto px-8 py-24">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <a href="#" class="text-4xl font-bold hover:text-gray-600 transition-colors">Home</a>
+                <a href="#" class="text-4xl font-bold hover:text-gray-600 transition-colors">About Us</a>
+                <a href="index.html" class="text-4xl font-bold hover:text-gray-600 transition-colors">Photo Booth</a>
+                <a href="#" class="text-4xl font-bold hover:text-gray-600 transition-colors">Contact</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Menu Toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const fullMenu = document.getElementById('fullMenu');
+        let isMenuOpen = false;
+
+        menuToggle.addEventListener('click', () => {
+            isMenuOpen = !isMenuOpen;
+            if (isMenuOpen) {
+                fullMenu.classList.remove('translate-x-full');
+            } else {
+                fullMenu.classList.add('translate-x-full');
+            }
+        });
+    </script>
+</body>
+</html> 
