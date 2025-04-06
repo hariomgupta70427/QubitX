@@ -8,6 +8,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const capturedPhoto = document.getElementById('captured-photo');
 
     let stream = null;
+    let backgroundImg = new Image();
+    backgroundImg.src = 'background.jpg';
+
+    // Make sure background is loaded
+    backgroundImg.onload = () => {
+        console.log('Background image loaded successfully');
+        startCamera(); // Start camera after background is loaded
+    };
+    backgroundImg.onerror = () => {
+        console.error('Error loading background image');
+        alert('Could not load background.jpg. Please make sure it exists in the same directory.');
+    };
 
     // Start camera
     async function startCamera() {
@@ -44,18 +56,19 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.height = 1080;
         const ctx = canvas.getContext('2d');
 
-        // Fill with a gradient background
-        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-        gradient.addColorStop(0, '#1a1a1a');
-        gradient.addColorStop(1, '#4a4a4a');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Draw background image first
+        const bgScale = Math.max(canvas.width / backgroundImg.width, canvas.height / backgroundImg.height);
+        const bgWidth = backgroundImg.width * bgScale;
+        const bgHeight = backgroundImg.height * bgScale;
+        const bgX = (canvas.width - bgWidth) / 2;
+        const bgY = (canvas.height - bgHeight) / 2;
+        ctx.drawImage(backgroundImg, bgX, bgY, bgWidth, bgHeight);
 
         // Calculate video dimensions to maintain aspect ratio
         const scale = Math.min(
-            canvas.width / video.videoWidth,
-            canvas.height / video.videoHeight
-        ) * 0.9; // Scale down to 90% to leave some margin
+            (canvas.width * 0.8) / video.videoWidth,  // Use 80% of canvas width
+            (canvas.height * 0.8) / video.videoHeight  // Use 80% of canvas height
+        );
 
         const scaledWidth = video.videoWidth * scale;
         const scaledHeight = video.videoHeight * scale;
@@ -156,9 +169,6 @@ document.addEventListener('DOMContentLoaded', () => {
             takeNewPhoto();
         }
     });
-
-    // Start camera when page loads
-    startCamera();
 
     // Mobile menu toggle
     const menuToggle = document.getElementById('menuToggle');
