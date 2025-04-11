@@ -52,28 +52,47 @@ document.addEventListener('DOMContentLoaded', () => {
     // Capture photo
     function capturePhoto() {
         const canvas = document.createElement('canvas');
+        // Match canvas size to background image's aspect ratio
+        const bgAspectRatio = backgroundImg.width / backgroundImg.height;
         canvas.width = 1920;
-        canvas.height = 1080;
+        canvas.height = Math.round(canvas.width / bgAspectRatio);
         const ctx = canvas.getContext('2d');
 
-        // Draw background image first
-        const bgScale = Math.max(canvas.width / backgroundImg.width, canvas.height / backgroundImg.height);
-        const bgWidth = backgroundImg.width * bgScale;
-        const bgHeight = backgroundImg.height * bgScale;
-        const bgX = (canvas.width - bgWidth) / 2;
-        const bgY = (canvas.height - bgHeight) / 2;
-        ctx.drawImage(backgroundImg, bgX, bgY, bgWidth, bgHeight);
+        // Draw background image at full size without cropping
+        ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
 
-        // Calculate video dimensions to maintain aspect ratio
+        // Define more precise dimensions for the center area - making it larger
+        // Increased from previous values to make the captured image larger
+        const centerAreaWidth = canvas.width * 0.9;  // 90% of width (increased from 80%)
+        const centerAreaHeight = canvas.height * 0.6; // 60% of height (increased from 50%)
+        
+        // Adjust vertical position to better align with the white center area
+        // Negative value moves it up from center
+        const verticalOffset = -canvas.height * 0.08; // 8% up from center
+        
+        // Calculate position
+        const centerX = (canvas.width - centerAreaWidth) / 2;
+        const centerY = (canvas.height - centerAreaHeight) / 2 + verticalOffset;
+        
+        // Reduced margin to allow more space for the image
+        const marginPercent = 0.01; // 1% margin (reduced from 2%)
+        const innerWidth = centerAreaWidth * (1 - 2 * marginPercent);
+        const innerHeight = centerAreaHeight * (1 - 2 * marginPercent);
+        const innerX = centerX + (centerAreaWidth * marginPercent);
+        const innerY = centerY + (centerAreaHeight * marginPercent);
+        
+        // Calculate scale to fit video within the inner area
         const scale = Math.min(
-            (canvas.width * 0.8) / video.videoWidth,  // Use 80% of canvas width
-            (canvas.height * 0.8) / video.videoHeight  // Use 80% of canvas height
+            innerWidth / video.videoWidth,
+            innerHeight / video.videoHeight
         );
 
         const scaledWidth = video.videoWidth * scale;
         const scaledHeight = video.videoHeight * scale;
-        const x = (canvas.width - scaledWidth) / 2;
-        const y = (canvas.height - scaledHeight) / 2;
+        
+        // Center in the inner area
+        const x = innerX + (innerWidth - scaledWidth) / 2;
+        const y = innerY + (innerHeight - scaledHeight) / 2;
 
         // Draw video feed (mirrored)
         ctx.save();
